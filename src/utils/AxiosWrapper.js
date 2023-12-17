@@ -1,9 +1,14 @@
+import axios from "axios";
 
 
 const AxiosWrapper = {
-    login: function(val) {
-        console.log("AxiosWrapper has been called.");
-        return "real value" + " " + val;
+    login: function(username, password) {
+       
+        return axios.post("http://localhost:8181/api/login", null, {
+            headers: {
+                Authorization: `Basic ${btoa(`${username}:${password}`)}`,
+              }
+        })
     }
 }
 

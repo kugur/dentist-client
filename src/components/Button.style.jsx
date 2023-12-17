@@ -11,6 +11,7 @@ const StyledButton = styled.button`
   white-space: nowrap;
   display: inline-block;
   padding-inline: 1rem;
+  cursor: pointer;
 `;
 
 export default StyledButton;

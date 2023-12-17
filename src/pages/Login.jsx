@@ -4,6 +4,7 @@ import StyledInput from "../components/Input.style";
 import GoogleSignButton from "../components/GoogleSignButton";
 import AxiosWrapper from "../utils/AxiosWrapper";
 import StyledButton from "../components/Button.style";
+import { useNavigate } from "react-router-dom";
 
 const Container = styled.div`
   height: 100vh;
@@ -37,15 +38,21 @@ const SocialLoginWrapper = styled.div`
 `;
 
 const Login = () => {
-  console.log("Login rendering");
+  // console.log("Login rendering");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const loginButtonDisabled = false;
+  const navigate = useNavigate();
+  const loginButtonDisabled = username && password ? false : true;
 
   const handleLogin = (e) => {
-    console.log("username :: " + username + " password  " + password);
+    // console.log("username :: " + username + " password  " + password);
     e.preventDefault();
-    // AxiosWrapper.login();
+    AxiosWrapper.login(username, password).then((response) => {
+      navigate("/");
+    })
+    .catch(error => {
+
+    });
   };
 
   return (
@@ -53,7 +60,7 @@ const Login = () => {
       <LoginWrapper>
         <InputWrapper>
           <StyledInput
-            placeholder=""
+            placeholder="email"
             onChange={(e) => {
               e.preventDefault();
               setUsername(e.target.value);
@@ -63,8 +70,8 @@ const Login = () => {
         </InputWrapper>
         <InputWrapper>
           <StyledInput
-            placeholder=""
-            type=""
+            placeholder="password"
+            type="password"
             onChange={(e) => setPassword(e.target.value)}
             value={password}
           ></StyledInput>

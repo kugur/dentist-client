@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import Theme from "../components/Theme";
 import GlobalStyle from "../components/GlobalStyle";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import Login from "./Login";
 import AxiosWrapper from "../utils/AxiosWrapper";
 import userEvent from "@testing-library/user-event";
@@ -16,9 +16,6 @@ const renderLogin = () =>
       </Theme>
     </Fragment>
   );
-
-
-// jest.mock("../utils/AxiosWrapper");
 
 
 test("username input should be rendered with email placeholder", () => {
@@ -61,10 +58,19 @@ test("Should have login button wih 'Giris Yap' label", () => {
 
 test("When login button clicked, AxiosWrapper.Login method should be called.", async () => {
     const user = userEvent.setup();
-    AxiosWrapper.login = jest.fn(() => {});
+    AxiosWrapper.login = jest.fn(() => Promise.resolve({data: "userInfo"}));
     renderLogin();
+    const userInputEl = screen.getByPlaceholderText(/email/i);
+    const passwordInputEl = screen.getByPlaceholderText(/password/i);
+
     
-    await user.click(screen.getByRole("button", {name: /Giris Yap/i }));
+    //Run test
+    await act(async () => {
+      await user.type(userInputEl, "ugur@gmail.com");
+      await user.type(passwordInputEl, "1234");
+      await user.click(screen.getByRole("button", {name: /Giris Yap/i }));
+    });
+   
     expect(AxiosWrapper.login).toHaveBeenCalled();
 })
 
@@ -74,8 +80,6 @@ test("If username and/or empty, login button should be disabled.", () => {
   renderLogin();
   const loginButton = screen.getByRole("button", {name: /Giris Yap/i});
 
-  //Run Test
-  
   //Verify 
   expect(loginButton).toBeDisabled();
 });
@@ -87,12 +91,16 @@ test("User can type on username and password input", async () => {
   const userInputEl = screen.getByPlaceholderText(/email/i);
   const username = "ugur@gmail.com";
   //Run Test
-  await user.click(userInputEl);
-  await user.keyboard(username);
+  await act(async () => {
+    await user.click(userInputEl);
+    await user.keyboard(username);
+  })
+
 
   //Verify Resutlt
   expect(userInputEl).toHaveValue(username)
 });
+
 
 // test("After fill the username and password, login button should be active.", async () => {
 //   //Initialize

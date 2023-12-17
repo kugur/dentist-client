@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Patient from "./pages/Patient";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
+import Home from "./pages/Home";
 import Theme from "./components/Theme";
 import GlobalStyle from "./components/GlobalStyle";
 import { Fragment } from "react";
@@ -11,7 +12,7 @@ import { Fragment } from "react";
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <div>Hello world!</div>,
+    element: <Home></Home>
   },
   { path: "/patient", element: <Patient></Patient> },
   { path: "/login", element: <Login></Login> },
