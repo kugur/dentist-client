@@ -50,8 +50,8 @@ const Login = () => {
     AxiosWrapper.login(username, password).then((response) => {
       navigate("/");
     })
-    .catch(error => {
-
+    .catch((error) => {
+      console.log(`error: ${error}`);
     });
   };
 
