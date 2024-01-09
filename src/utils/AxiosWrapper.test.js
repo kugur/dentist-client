@@ -2,6 +2,10 @@ import axios from "axios";
 // import { __esModule } from "@testing-library/jest-dom/dist/matchers";
 import AxiosWrapper from "./AxiosWrapper";
 
+jest.mock('axios', () => ({
+  create: jest.fn()
+}));
+
 afterEach(() => {
   jest.clearAllMocks();
 });

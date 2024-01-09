@@ -2,24 +2,55 @@ import { Fragment } from "react";
 import Theme from "../components/Theme";
 import GlobalStyle from "../components/GlobalStyle";
 import { render, screen, act, waitFor } from "@testing-library/react";
-import Login from "./Login";
+
 import AxiosWrapper from "../utils/AxiosWrapper";
 import userEvent from "@testing-library/user-event";
-import { useNavigate } from "react-router-dom";
+import { RouterProvider, createMemoryRouter } from "react-router-dom";
+import Login from "./Login";
 
-jest.mock("react-router-dom", () => ({
-  useNavigate: jest.fn(),
+jest.mock("../utils/AxiosWrapper", () => ({
+  login: jest.fn(),
+  get: jest.fn(),
 }));
 
-const renderLogin = () =>
-  render(
-    <Fragment>
+// jest.mock("react-router-dom", () => ({
+//   useNavigate: jest.fn(),
+// }));
+
+// const localStorageMock = {
+//   getItem: jest.fn(),
+//   setItem: jest.fn(),
+//   removeItem: jest.fn(),
+//   clear: jest.fn(),
+// };
+// window.localStorage = localStorageMock;
+
+const HomePage = () => <div data-testid="homePage">Home Page</div>;
+const routes = [
+  {
+    path: "/",
+    element: <HomePage></HomePage>,
+  },
+  {
+    path: "/login",
+    element: <Login></Login>,
+  },
+];
+
+const renderLogin = () => {
+  const router = createMemoryRouter(routes, {
+    initialEntries: ["/login"],
+    initialIndex: 0,
+  });
+
+  return render(
+    <>
       <Theme>
-        <GlobalStyle></GlobalStyle>
-        <Login></Login>
+        <RouterProvider router={router} />
       </Theme>
-    </Fragment>
+    </>
   );
+};
 
 test("username input should be rendered with email placeholder", () => {
   renderLogin();
@@ -45,12 +76,12 @@ test("Should have google sign button.", () => {
   expect(googleSignButton).toBeInTheDocument();
 });
 
-test("Google sign button linked to 'http://localhost:8080/oauth2/authorization/google'", () => {
+test("Google sign button linked to 'http://localhost:8181/oauth2/authorization/google'", () => {
   renderLogin();
   const googleSignButton = screen.getByTestId("googleSignInButton");
   expect(googleSignButton).toHaveAttribute(
     "href",
-    "http://localhost:8080/oauth2/authorization/google"
+    "http://localhost:8181/oauth2/authorization/google"
   );
 });
 
@@ -90,7 +121,7 @@ test("If username and/or empty, login button should be disabled.", () => {
 test("User can type on username and password input", async () => {
   //Initialize
   const user = userEvent.setup();
-  renderLogin();
+  await renderLogin();
   const userInputEl = screen.getByPlaceholderText(/email/i);
   const username = "ugur@gmail.com";
   //Run Test
@@ -110,7 +141,7 @@ test("If Login return 403, show error messaage", async () => {
     code: "ERR_BAD_REQUEST",
     status: 403,
   };
-  
+
   AxiosWrapper.login = jest.fn(() => Promise.reject(error));
   renderLogin();
   const userInputEl = screen.getByPlaceholderText(/email/i);
@@ -127,15 +158,82 @@ test("If Login return 403, show error messaage", async () => {
   await waitFor(() => expect(errorMessageEl).toBeVisible());
 });
 
-// test("After fill the username and password, login button should be active.", async () => {
-//   //Initialize
-//   const user = userEvent.setup();
-//   renderLogin();
-//   const loginButton = screen.getByRole("button", {name: /Giris Yap/i});
-//   const passwordInputEl = screen.getByPlaceholderText(/password/i);
-//   const userInputEl = screen.getByPlaceholderText(/email/i);
+test("if Login return 200, user is sent to home page", async () => {
+  //Initialize
+  const user = userEvent.setup();
+  const response = {
+    data: { email: "deneme@gmail.com", roles: ["ROLE_USER"] },
+    status: 200,
+  };
+  AxiosWrapper.login = jest.fn(() => Promise.resolve(response));
+  renderLogin();
+  const userInputEl = screen.getByPlaceholderText(/email/i);
+  const passwordInputEl = screen.getByPlaceholderText(/password/i);
+  const loginButton = screen.getByRole("button", { name: /Giris Yap/i });
 
-//   //Run Test
-//   await user.pointer(passwordInputEl, '[MouseLeft]');
+  //Run Test
+  await act(async () => {
+    await user.type(userInputEl, "ugur@gmail.com");
+    await user.type(passwordInputEl, "1234");
+    await user.click(loginButton);
+  });
 
-// });
+  expect(screen.getByTestId("homePage")).toBeInTheDocument();
+});
+
+test("After successful login, userInfo that respone from login, should be stored on localstorage", async () => {
+  //Initialize
+  const localStorageMock = jest.spyOn(Storage.prototype, "setItem");
+
+  const user = userEvent.setup();
+  const response = {
+    data: { email: "deneme@gmail.com", roles: ["ROLE_USER"] },
+    status: 200,
+  };
+  AxiosWrapper.login = jest.fn(() => Promise.resolve(response));
+  renderLogin();
+  const userInputEl = screen.getByPlaceholderText(/email/i);
+  const passwordInputEl = screen.getByPlaceholderText(/password/i);
+  const loginButton = screen.getByRole("button", { name: /Giris Yap/i });
+
+  //Run Test
+  await act(async () => {
+    await user.type(userInputEl, "ugur@gmail.com");
+    await user.type(passwordInputEl, "1234");
+    await user.click(loginButton);
+  });
+
+  //Verify Result
+  expect(localStorageMock).toHaveBeenCalledWith(
+    "userInfo",
+    JSON.stringify(response.data)
+  );
+});
+
+test("After failed login, userInfo should be removed from localstorage", async () => {
+  //Initialize
+  const localStorageMock = jest.spyOn(Storage.prototype, "removeItem");
+
+  const user = userEvent.setup();
+  const error = {
+    message: "Request failed with status code 403",
+    name: "AxiosError",
+    code: "ERR_BAD_REQUEST",
+    status: 403,
+  };
+  AxiosWrapper.login = jest.fn(() => Promise.reject(error));
+  renderLogin();
+  const userInputEl = screen.getByPlaceholderText(/email/i);
+  const passwordInputEl = screen.getByPlaceholderText(/password/i);
+  const loginButton = screen.getByRole("button", { name: /Giris Yap/i });
+
+  //Run Test
+  await act(async () => {
+    await user.type(userInputEl, "ugur@gmail.com");
+    await user.type(passwordInputEl, "1234");
+    await user.click(loginButton);
+  });
+
+  //Verify Result
+  expect(localStorageMock).toHaveBeenCalledWith("userInfo");
+});

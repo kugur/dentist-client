@@ -37,22 +37,35 @@ const SocialLoginWrapper = styled.div`
   margin: 1rem;
 `;
 
+const ErrorMessage = styled.div`
+  color: red;
+`;
 const Login = () => {
   // console.log("Login rendering");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [loginInput, setLoginInput] = useState({ username: "", password: "" });
+  const [errorMessageVisible, setErrorMessageVisible] = useState(false);
   const navigate = useNavigate();
-  const loginButtonDisabled = username && password ? false : true;
+  const loginButtonDisabled =
+    loginInput.username && loginInput.password ? false : true;
 
   const handleLogin = (e) => {
     // console.log("username :: " + username + " password  " + password);
     e.preventDefault();
-    AxiosWrapper.login(username, password).then((response) => {
-      navigate("/");
-    })
-    .catch((error) => {
-      console.log(`error: ${error}`);
-    });
+    AxiosWrapper.login(loginInput.username, loginInput.password)
+      .then((response) => {
+        global.localStorage.setItem("userInfo", JSON.stringify(response.data));
+        navigate("/");
+      })
+      .catch((error) => {
+        console.log(`error: ${error}`);
+        setErrorMessageVisible(true);
+        global.localStorage.removeItem("userInfo");
+      });
+  };
+
+  const handleInput = (value, key) => {
+    setLoginInput((loginInput) => ({ ...loginInput, [key]: value }));
+    setErrorMessageVisible(false);
   };
 
   return (
@@ -63,19 +76,25 @@ const Login = () => {
             placeholder="email"
             onChange={(e) => {
               e.preventDefault();
-              setUsername(e.target.value);
+              handleInput(e.target.value, "username");
             }}
-           value={username}
+            value={loginInput.username}
           ></StyledInput>
         </InputWrapper>
         <InputWrapper>
           <StyledInput
             placeholder="password"
             type="password"
-            onChange={(e) => setPassword(e.target.value)}
-            value={password}
+            onChange={(e) => handleInput(e.target.value, "password")}
+            value={loginInput.password}
           ></StyledInput>
         </InputWrapper>
+        <ErrorMessage
+          data-testid="errorMessage"
+          style={{ display: errorMessageVisible ? "block" : "none" }}
+        >
+          Yanlis Girdin Amk
+        </ErrorMessage>
         <LoginButtonWrapper>
           <LoginButton
             data-testid="loginButton"
