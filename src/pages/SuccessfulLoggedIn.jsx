@@ -11,7 +11,7 @@ const SuccessfullLoggedIn = () => {
             global.localStorage.setItem("userInfo", JSON.stringify(response.data));
             
             if (response.data.roles.indexOf("ROLE_PRE_USER") > -1) {
-                navigate("/selectRole")
+                navigate("/dentistSignUp")
             } else {
                 navigate("/");
             }
@@ -23,4 +23,4 @@ const SuccessfullLoggedIn = () => {
     );
 };
 
-export default SuccessfullLoggedIn;
+export default SuccessfullLoggedIn; 
